@@ -7,48 +7,45 @@ using namespace std;
 float* getTable(int n); // hardcoded table
 
 //normalize data to have mean of 0 and standard deviation of 1 for SAX conversion
-vector<float> normData(vector<float> data){
+void normData(vector<float> *data, vector<float> *norm){
     float mean = 0; //mean of the data
     float StDev = 0;  //standard deviation of the data
     
     //calculating mean
-    for(int i = 0; i < data.size(); i ++){
-        mean += data.at(i);
+    for(int i = 0; i < data -> size(); i ++){
+        mean += data -> at(i);
     }
-    mean /= data.size();
+    mean /= data -> size();
     
     //calculating standard deviation
-    for(int i = 0; i < data.size(); i++){
-        StDev += pow((data.at(i)-mean),2);
+    for(int i = 0; i < data -> size(); i++){
+        StDev += pow((data -> at(i)-mean),2);
     }
-    StDev /= data.size();
+    StDev /= data -> size();
     StDev = sqrt(StDev);
     
     //normalizing data
-    for(int i = 0; i < data.size(); i++){
-        data.at(i) = (data.at(i)-mean)/StDev;
+    for(int i = 0; i < data -> size(); i++){
+        //data.at(i) = (data.at(i)-mean)/StDev;
+        norm -> push_back((data -> at(i)-mean)/StDev);
     }
-    return data;
 }
 
 //dimensionality reduction of data into segment sizes of the user's choice
-vector<float> toPAA(vector<float> data, int segSize){
-    data = normData(data); //normalize data
-    vector<float> PAA; //resulting data
+void toPAA(vector<float> *data, vector<float> *PAA, int segSize){
     
     //testing if size of data is divisible by the choosen segment size
-    if((data.size()/segSize)%1 == 0){
+    if((data -> size()/segSize)%1 == 0){
         //iterating for each segment of data in Time Series data
-        for(int i = 0; i < data.size()/segSize; i++){
+        for(int i = 0; i < data -> size()/segSize; i++){
             float sum = 0;
             //averaging for each segment
             for(int m = i*segSize; m < (i+1)*segSize; m++){
-                sum += data.at(m);
+                sum += data -> at(m);
             }
-            PAA.push_back(sum/segSize);
+            PAA -> push_back(sum/segSize);
         }
     }
-    return PAA;
 }
 
 //Converting PAA to SAX
@@ -62,8 +59,7 @@ vector<float> toPAA(vector<float> data, int segSize){
  intervals: interval [2] = 0.1, interval [3] = 0.4
  Interval Number: 3
  */
-vector<int> toSAX(vector<float> data, int numBkPts){
-    vector<int> SAXWord;
+void toSAX(vector<float> *data, vector<int> *SAXWord, vector<int> *card, int numBkPts){
     float* bkPts = getTable(numBkPts-3); //get table values for number of breakpoints choosen
     
     cout<<"Table: ";
@@ -73,68 +69,83 @@ vector<int> toSAX(vector<float> data, int numBkPts){
     cout<<endl;
     
     //iterating through PAA data
-    for(int i = 0; i < data.size(); i++){
+    for(int i = 0; i < data -> size(); i++){
         //if the segment's PAA value is less than or equal to 0, compare to negative breakpoints
-        if(data.at(i) <= 0){
+        if(data -> at(i) <= 0){
             //iterating through negative breakpoint values
             for(int m = (numBkPts/2)-0.5; m >= 0; m--){
                 //when the interval is found set it's SAX value to the interval
-                if(data.at(i)>bkPts[m]){
-                    SAXWord.push_back(m+1);
+                if(data -> at(i)>bkPts[m]){
+                    SAXWord -> push_back(m+1);
                     break;
                 }
                 //if the value is less than the lowest breakpoint
-                else if((m==0) && (data.at(i)< bkPts[0])){
-                    SAXWord.push_back(0);
+                else if((m==0) && (data -> at(i)< bkPts[0])){
+                    SAXWord -> push_back(0);
                 }
             }
         }
         //if the segment's PAA value is more than 0, compare to positive breakpoints
-        else if(data.at(i) > 0){
+        else if(data -> at(i) > 0){
             //iterating through positive breakpoint values
             for(int m = (numBkPts/2)-1; m < numBkPts - 1; m++){
                 //when the interval is found set it's SAX value to the interval
-                if(data.at(i)<bkPts[m]){
-                    SAXWord.push_back(m);
+                if(data -> at(i)<bkPts[m]){
+                    SAXWord -> push_back(m);
                     break;
                 }
                 //if the value is higher than the highest breakpoint
-                else if((m==numBkPts - 2) && (data.at(i)>bkPts[m])){
-                    SAXWord.push_back(numBkPts - 1);
+                else if((m==numBkPts - 2) && (data -> at(i)>bkPts[m])){
+                    SAXWord -> push_back(numBkPts - 1);
                 }
             }
         }
     }
-    return SAXWord;
 }
 
 
 
 //used for testing
 int main(){
-    vector<float> data1;
+    vector<float> orgData;
+    //------------------------------- Input data from terminal
     float c;
-    for(int i = 0; i < 8; i ++){
+    for(int i = 0; i < 3431; i ++){
         cin>>c;
-        data1.push_back(c);
+        orgData.push_back(c);
     }
     cout<<"Data: ";
-    for(int i = 0; i < data1.size(); i++){
-        cout << data1.at(i)<<" ";
+    for(int i = 0; i < orgData.size(); i++){
+        cout << orgData.at(i)<<" ";
     }
     cout<<endl;
-    vector<float> data = normData(data1);
-    vector<float> PAA = toPAA(data,2);
-    cout<<"PAA: ";
-    for(int i = 0; i< PAA.size();i++){
-        cout<<PAA.at(i)<<" ";
-    }
-    cout<<endl;
+    //------------------------------- Normalize Data
+    vector<float> nrmData;
     
-    vector<int> SAXWordFinal = toSAX(PAA,8);
-    for(int i = 0; i < SAXWordFinal.size();i++)
-        cout<<SAXWordFinal.at(i) << " ";
+    normData(&orgData,&nrmData);
+    
+    cout<<"Normalized Data: ";
+    for(int i = 0; i < nrmData.size();i++)
+        cout<<nrmData.at(i)<<" ";
     cout<<endl;
+    //------------------------------- Calculate PAA
+    vector<float> PAA;
+    
+    toPAA(&nrmData,&PAA,8);
+    
+    cout<<"PAA: ";
+    for(int i = 0; i< PAA.size();i++)
+        cout<<PAA.at(i)<<" ";
+    cout<<endl;
+    //------------------------------- Calculate SAX Word and set corresponding Cardinality
+    vector<int> card;
+    vector<int> SAXWordFinal;
+    
+    toSAX(&PAA,&SAXWordFinal,&card,4);
+    for(int i = 0; i < SAXWordFinal.size();i++)
+        cout<<SAXWordFinal.at(i) << endl;
+    cout<<endl;
+    //-------------------------------
     return 0;
 }
 
@@ -149,7 +160,7 @@ float* getTable(int n){
     bPts[1] = new float[3];
     bPts[1][0] = -0.67;
     bPts[1][1] = 0;
-    bPts[1][1] = 0.67;
+    bPts[1][2] = 0.67;
     
     bPts[2] = new float[4];
     bPts[2][0] = -0.84;
