@@ -74,6 +74,7 @@ void toSAX(vector<float> *data, vector<int> *SAXWord, vector<int> *card, int num
                 counter++;
         }
         SAXWord -> push_back(counter);
+        card -> push_back(numBkPts);
     }
 }
 
