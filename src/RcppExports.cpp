@@ -19,3 +19,26 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// runNormData
+RObject runNormData(std::vector<float> data);
+RcppExport SEXP rsax_runNormData(SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<float> >::type data(dataSEXP);
+    __result = Rcpp::wrap(runNormData(data));
+    return __result;
+END_RCPP
+}
+// runToPAA
+RObject runToPAA(std::vector<float> data, int segSize);
+RcppExport SEXP rsax_runToPAA(SEXP dataSEXP, SEXP segSizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<float> >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< int >::type segSize(segSizeSEXP);
+    __result = Rcpp::wrap(runToPAA(data, segSize));
+    return __result;
+END_RCPP
+}
