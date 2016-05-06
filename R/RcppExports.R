@@ -13,3 +13,7 @@ runToPAA <- function(data, segSize) {
     .Call('rsax_runToPAA', PACKAGE = 'rsax', data, segSize)
 }
 
+runToSAX <- function(data, brkPtNum) {
+    .Call('rsax_runToSAX', PACKAGE = 'rsax', data, brkPtNum)
+}
+

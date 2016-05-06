@@ -42,3 +42,15 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// runToSAX
+RObject runToSAX(std::vector<float> data, int brkPtNum);
+RcppExport SEXP rsax_runToSAX(SEXP dataSEXP, SEXP brkPtNumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<float> >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< int >::type brkPtNum(brkPtNumSEXP);
+    __result = Rcpp::wrap(runToSAX(data, brkPtNum));
+    return __result;
+END_RCPP
+}

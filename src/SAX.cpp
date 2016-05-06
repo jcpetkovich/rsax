@@ -2,6 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <math.h>
+#include <omp.h>
 #include <Rcpp.h>
 
 using namespace Rcpp;
@@ -66,7 +67,7 @@ void toPAA(std::vector<float> *data, std::vector<float> *PAA, int segSize){
         PAA -> resize((dataSize/segSize)+1);
     }
 
-#pragma omp parallel for
+# pragma omp parallel for
     for(int ii = 0; ii < dataSize;ii += tile){
         for(int i = ii; i < ii+tile && i < dataSize; i+=segSize){
             float sum = 0;
@@ -94,12 +95,6 @@ void toPAA(std::vector<float> *data, std::vector<float> *PAA, int segSize){
  */
 void toSAX(std::vector<float> *data, std::vector<int> *SAXWord, std::vector<int> *card, int numBkPts){
     float* bkPts = getTable(numBkPts-3); //get table values for number of breakpoints choosen
-
-    //std::cout<<"Table: ";
-    //for(int i = 0; i < numBkPts-1;i++){
-    //  std:: cout<<bkPts[i]<<" ";
-    //}
-    //std::cout<<std::endl;
 
     int dataSize = data -> size();
 
@@ -169,12 +164,17 @@ RObject runNormData(std::vector<float> data){
 // [[Rcpp::export]]
 RObject runToPAA(std::vector<float> data, int segSize){
     std::vector<float> PAA;
-
-    std::vector<float> norm;
-    normData(&data,&norm);
-
-    toPAA(&norm,&PAA,segSize);
+    toPAA(&data,&PAA,segSize);
     return wrap(PAA);
+}
+
+//This function is used to test the outputs of the to SAX function
+// [[Rcpp::export]]
+RObject runToSAX(std::vector<float> data,int brkPtNum){
+  std::vector<int> SAXWord;
+  std::vector<int> card;
+  toSAX(&data,&SAXWord,&card,brkPtNum);
+  return wrap(SAXWord);
 }
 
 //hardcoded lookup table from 3 to 10 for now.
