@@ -17,9 +17,9 @@ void normData(std::vector<float> *data, std::vector<float> *norm) {
   int tile = 4096 * std::pow(2, 2);
 
   float sumx = 0.0f, sumx2 = 0.0f;
-  // #pragma vector aligned
-  // #pragma omp parallel for default(shared) reduction(+ : sumx,                   \
-//                                                    sumx2) schedule(guided)
+#pragma vector aligned
+#pragma omp parallel for default(shared) reduction(+ : sumx,                   \
+                                                   sumx2) schedule(guided)
   for (decltype(data->size()) i = 0; i < data->size(); i++) {
     sumx += data->at(i);
     sumx2 += data->at(i) * data->at(i);
