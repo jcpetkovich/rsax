@@ -19,6 +19,34 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// eucDis
+float eucDis(std::vector<float> rawData1, std::vector<float> rawData2);
+RcppExport SEXP rsax_eucDis(SEXP rawData1SEXP, SEXP rawData2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<float> >::type rawData1(rawData1SEXP);
+    Rcpp::traits::input_parameter< std::vector<float> >::type rawData2(rawData2SEXP);
+    __result = Rcpp::wrap(eucDis(rawData1, rawData2));
+    return __result;
+END_RCPP
+}
+// minDis
+float minDis(std:: vector<int> SAXData1, std::vector<int> card1, std::vector<int> SAXData2, std::vector<int> card2, int rawDataSize, bool suppressWarnings);
+RcppExport SEXP rsax_minDis(SEXP SAXData1SEXP, SEXP card1SEXP, SEXP SAXData2SEXP, SEXP card2SEXP, SEXP rawDataSizeSEXP, SEXP suppressWarningsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std:: vector<int> >::type SAXData1(SAXData1SEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type card1(card1SEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type SAXData2(SAXData2SEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type card2(card2SEXP);
+    Rcpp::traits::input_parameter< int >::type rawDataSize(rawDataSizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type suppressWarnings(suppressWarningsSEXP);
+    __result = Rcpp::wrap(minDis(SAXData1, card1, SAXData2, card2, rawDataSize, suppressWarnings));
+    return __result;
+END_RCPP
+}
 // runNormData
 RObject runNormData(std::vector<float> data);
 RcppExport SEXP rsax_runNormData(SEXP dataSEXP) {

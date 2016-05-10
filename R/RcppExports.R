@@ -5,6 +5,14 @@ runSAX <- function(orgData, segmentSize, alphabetSize, iSAX = FALSE) {
     .Call('rsax_runSAX', PACKAGE = 'rsax', orgData, segmentSize, alphabetSize, iSAX)
 }
 
+eucDis <- function(rawData1, rawData2) {
+    .Call('rsax_eucDis', PACKAGE = 'rsax', rawData1, rawData2)
+}
+
+minDis <- function(SAXData1, card1, SAXData2, card2, rawDataSize, suppressWarnings = FALSE) {
+    .Call('rsax_minDis', PACKAGE = 'rsax', SAXData1, card1, SAXData2, card2, rawDataSize, suppressWarnings)
+}
+
 runNormData <- function(data) {
     .Call('rsax_runNormData', PACKAGE = 'rsax', data)
 }
