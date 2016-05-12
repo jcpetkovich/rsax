@@ -25,3 +25,7 @@ runToSAX <- function(data, brkPtNum) {
     .Call('rsax_runToSAX', PACKAGE = 'rsax', data, brkPtNum)
 }
 
+testFunc <- function(mtx) {
+    invisible(.Call('rsax_testFunc', PACKAGE = 'rsax', mtx))
+}
+

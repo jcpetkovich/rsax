@@ -60,24 +60,21 @@ void toPAA(std::vector<float> *data, std::vector<float> *PAA, int segSize) {
   int perThread = 4096; // tbd
   int tile = segSize * perThread;
 
-  if (dataSize % segSize == 0) {
-    PAA->reserve(dataSize / segSize);
-    PAA->resize(dataSize / segSize);
-  } else {
-    PAA->reserve((dataSize / segSize) + 1);
-    PAA->resize((dataSize / segSize) + 1);
-  }
+  PAA->reserve(ceil((float)dataSize / (float)segSize));
+  PAA->resize(ceil((float)dataSize / (float)segSize));
 
 #pragma omp parallel for
   for (int ii = 0; ii < dataSize; ii += tile) {
     for (int i = ii; i < ii + tile && i < dataSize; i += segSize) {
       float sum = 0;
       // averaging for each segment
-      for (int m = i; m < (i + segSize); m++) {
+      int m;
+      for (m = i; m < (i + segSize) && m < dataSize; m++) {
         sum += data->at(m);
       }
       // PAA -> push_back(sum/segSize);
-      PAA->at(i / segSize) = sum / segSize;
+
+      PAA->at(i / segSize) = sum / (m-i);
     }
   }
 }
@@ -128,7 +125,7 @@ float *getTable(int alphabetSize) {
   if(tableMap.find(alphabetSize) == tableMap.end()){
     float *tempTable = new float[alphabetSize - 1];
     double interval = 1 / (double)alphabetSize;
-    int tile = 10;
+    int tile = 10; //tbd
 
 #pragma omp parallel for
     for (int ii = 1; ii < alphabetSize; ii += tile)
@@ -144,12 +141,14 @@ float *getTable(int alphabetSize) {
 //function that promotes the data of lower cardinality to the data of higher cardinality
 int promoteCard(int cardLow, int dataLow, int cardHigh, int dataHigh, bool suppressWarnings){
   int shiftNum = ceil(log2(cardHigh)) - ceil(log2(cardLow));
+
   if(suppressWarnings)
     cardError = true;
   if((((int)log2(cardHigh) != ceil(log2(cardHigh)))||((int)log2(cardLow) != ceil(log2(cardLow))))&&(!cardError)){
     cardError = true;
     Rf_warning("One or more of your Cardinalities are not of base 2. This may cause some error in the result.");
-    }
+  }
+
   dataLow = dataLow << shiftNum;
   if(dataLow < dataHigh){
     int diff = dataHigh - dataLow;
@@ -186,7 +185,6 @@ RObject runSAX(std::vector<float> orgData, int segmentSize, int alphabetSize,
   std::vector<int> SAXWordFinal;
 
   toSAX(&PAA, &SAXWordFinal, &card, alphabetSize);
-
   //return values
   if (iSAX)
     return List::create(_["SAXWord"] = SAXWordFinal, _["Cardinality"] = card);
@@ -221,14 +219,14 @@ float minDis(std:: vector<int> SAXData1, std::vector<int> card1, std::vector<int
     float* bkPts;
     int dataSize = SAXData1.size();
     for(int i = 0; i < dataSize; i++){
-        if(card1.at(i) > card2.at(i)){
-          SAXData2.at(i) = promoteCard(card2.at(i),SAXData2.at(i), card1.at(i), SAXData1.at(i),suppressWarnings);
-          card2.at(i) = card1.at(i);
-        }
-        else if(card1.at(i) < card2.at(i)){
-          SAXData1.at(i) = promoteCard(card1.at(i), SAXData1.at(i), card2.at(i), SAXData2.at(i),suppressWarnings);
-          card1.at(i) = card2.at(i);
-        }
+      if(card1.at(i) > card2.at(i)){
+        SAXData2.at(i) = promoteCard(card2.at(i),SAXData2.at(i), card1.at(i), SAXData1.at(i),suppressWarnings);
+        card2.at(i) = card1.at(i);
+      }
+      else if(card1.at(i) < card2.at(i)){
+        SAXData1.at(i) = promoteCard(card1.at(i), SAXData1.at(i), card2.at(i), SAXData2.at(i),suppressWarnings);
+        card1.at(i) = card2.at(i);
+      }
       bkPts = getTable(card1.at(i));
       if(std::abs(SAXData1.at(i) - SAXData2.at(i)) > 1){
         distance += pow(bkPts[(int)fmax(SAXData1.at(i), SAXData2.at(i))-1] - bkPts[(int)fmin(SAXData1.at(i), SAXData2.at(i))],2);

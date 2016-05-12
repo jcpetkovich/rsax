@@ -82,3 +82,13 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// testFunc
+void testFunc(NumericMatrix mtx);
+RcppExport SEXP rsax_testFunc(SEXP mtxSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type mtx(mtxSEXP);
+    testFunc(mtx);
+    return R_NilValue;
+END_RCPP
+}
