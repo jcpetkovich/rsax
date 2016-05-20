@@ -47,6 +47,25 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// runKMedian
+List runKMedian(NumericMatrix seq, NumericMatrix card, int step, int windowSize, int clusterNum, int rawDataSize, NumericMatrix centroidSeq, NumericMatrix centroidCard, bool prevCentroid);
+RcppExport SEXP rsax_runKMedian(SEXP seqSEXP, SEXP cardSEXP, SEXP stepSEXP, SEXP windowSizeSEXP, SEXP clusterNumSEXP, SEXP rawDataSizeSEXP, SEXP centroidSeqSEXP, SEXP centroidCardSEXP, SEXP prevCentroidSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type seq(seqSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type card(cardSEXP);
+    Rcpp::traits::input_parameter< int >::type step(stepSEXP);
+    Rcpp::traits::input_parameter< int >::type windowSize(windowSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type clusterNum(clusterNumSEXP);
+    Rcpp::traits::input_parameter< int >::type rawDataSize(rawDataSizeSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type centroidSeq(centroidSeqSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type centroidCard(centroidCardSEXP);
+    Rcpp::traits::input_parameter< bool >::type prevCentroid(prevCentroidSEXP);
+    __result = Rcpp::wrap(runKMedian(seq, card, step, windowSize, clusterNum, rawDataSize, centroidSeq, centroidCard, prevCentroid));
+    return __result;
+END_RCPP
+}
 // runNormData
 RObject runNormData(std::vector<float> data);
 RcppExport SEXP rsax_runNormData(SEXP dataSEXP) {

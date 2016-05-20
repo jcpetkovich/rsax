@@ -90,8 +90,7 @@ void toPAA(std::vector<float> *data, std::vector<float> *PAA, int segSize) {
  intervals: interval [2] = 0.1, interval [3] = 0.4
  Interval Number: 3
  */
-void toSAX(std::vector<float> *data, std::vector<int> *SAXWord,
-           std::vector<int> *card, int numBkPts) {
+void toSAX(std::vector<float> *data, std::vector<int> *SAXWord, std::vector<int> *card, int numBkPts) {
   float *bkPts =
     getTable(numBkPts); // get table values for number of breakpoints chosen
 
@@ -169,8 +168,7 @@ int promoteCard(int cardLow, int dataLow, int cardHigh, int dataHigh, bool suppr
 
 // Call this from R to convert input data to a SAX Word
 // [[Rcpp::export]]
-RObject runSAX(std::vector<float> orgData, int segmentSize, int alphabetSize,
-               bool iSAX = false) {
+RObject runSAX(std::vector<float> orgData, int segmentSize, int alphabetSize, bool iSAX = false) {
   //normalize data
   std::vector<float> nrmData;
   normData(&orgData, &nrmData);
@@ -236,6 +234,121 @@ float minDis(std:: vector<int> SAXData1, std::vector<int> card1, std::vector<int
     distance *= std::sqrt(rawDataSize/SAXData1.size());
   }
   return distance;
+}
+
+struct element{
+  std::vector<int> seq;
+  std::vector<int> card;
+  float dist = 0;
+};
+
+
+std::vector<element> kMedian(std::vector<int> seq, std::vector<int> card, int step, int windowSize,int clusterNum, int rawDataSize, std::vector<element> centroidIn, bool prevCentroid = false){
+  int index = 0;
+  if(seq.size() != card.size()){
+    Rf_error("Error: The sequence does not match the cardinality size");
+    return centroidIn;
+  }
+  //Assignment of centroids
+  if(!prevCentroid){
+    centroidIn.clear();
+    if(clusterNum > seq.size()-windowSize){
+      Rf_error("There are too many clusters and too little groups in the sequence");
+      return centroidIn;
+    }
+    centroidIn.reserve(clusterNum);
+    centroidIn.resize(clusterNum);
+    for(int i = 0; i < clusterNum; i++){
+      element tempCent;
+      tempCent.seq.assign(seq.begin()+index,seq.begin()+index+windowSize);
+      tempCent.card.assign(card.begin()+index,card.begin()+index+windowSize);
+      centroidIn.at(i) = (tempCent);
+      index += step;
+    }
+    if(clusterNum == seq.size()-windowSize)
+      return centroidIn;
+  }
+  else if((centroidIn.at(0).seq.size() != windowSize)||(centroidIn.at(0).card.size() != windowSize)){
+    Rf_error("Error: The median sequence or the median cardinality is not the same size as the window size");
+    return centroidIn;
+  }
+  //End of assignment of centroids
+
+  //Have an array of omp_lock_t
+
+  //array of vectors to hold each cluster
+  std::vector<element> *cluster = new std::vector<element>[clusterNum];
+  //iterate through each possible group of size 'windowSize' and interval 'step' in the sequence
+  for(int i = index; i < (seq.size()-windowSize);i+=step){
+    //temp element to hold the current element
+    element temp;
+    temp.seq.assign(seq.begin()+i,seq.begin()+i+windowSize);
+    temp.card.assign(card.begin()+i,card.begin()+i+windowSize);
+    //vector of distance calculations to find the min between each centroid of clusters
+    std::vector<float> dist;
+    //iterate through centroids and save distance between the current vector and the centroid
+    for(int c = 0; c < clusterNum; c++)
+      dist.push_back(minDis(centroidIn.at(c).seq,centroidIn.at(c).card,temp.seq,temp.card,rawDataSize,true));
+    //get the iterator for the minimum of the vector
+    std::vector<float>::iterator it= std::min_element(dist.begin(), dist.end());
+    //set the value of the minimum distance of the vector
+    temp.dist = *it;
+    //determine which cluster the element belongs in
+    int clusterIndex = std::distance(dist.begin(),it);
+    bool done = false;
+    //iterate though elements in each cluster and insert the new element to have the cluster orded from smallest to largest
+    for(int v = 0; v < cluster[clusterIndex].size(); v++){
+      if(cluster[clusterIndex].at(v).dist > temp.dist){
+        cluster[clusterIndex].insert(cluster[clusterIndex].begin()+v,temp);//omp lock this
+        done = true;
+        break;
+      }
+    }
+    //if every element in the cluster is smaller set the new element to the last index in the cluster
+    if(!done)
+      cluster[clusterIndex].push_back(temp); //omp lock this
+  }
+
+  for(int i = 0; i < clusterNum; i++){
+    if(cluster[i].size() != 0)
+      centroidIn.at(i) = cluster[i].at((int)(cluster[i].size()/2));
+  }
+  return centroidIn;
+}
+
+// [[Rcpp::export]]
+List runKMedian(NumericMatrix seq, NumericMatrix card, int step, int windowSize, int clusterNum, int rawDataSize, NumericMatrix centroidSeq, NumericMatrix centroidCard, bool prevCentroid = false){
+  std::vector<element> centroid;
+
+  //if the user wants to use inputted centroids
+  if(prevCentroid){
+    //test if the centroid dimensions are valid
+    if((centroidSeq.nrow() != centroidCard.nrow())||(centroidSeq.ncol() != centroidCard.ncol())||(centroidSeq.ncol() != windowSize)){
+      Rf_error("Error: Your input Centroid sequence or cardinality don't have the correct dimensions");
+      return List::create();
+    }
+    //put inputted centroids in centroid vector
+    for(int i = 0; i < centroidSeq.nrow(); i++){
+      NumericVector tempCentSeq = centroidSeq.row(i);
+      NumericVector tempCentCard = centroidCard.row(i);
+      element temp;
+      temp.seq = as<std::vector<int>>(tempCentSeq);
+      temp.card = as<std::vector<int>>(tempCentCard);
+      centroid.push_back(temp);
+    }
+  }
+  //iterate through all sequences given and feed into kMedian function
+  for(int i = 0; i < seq.nrow(); i++){
+    NumericVector tempSeq = seq.row(i);
+    NumericVector tempCard = card.row(i);
+    centroid = kMedian(as<std::vector<int>>(tempSeq),as<std::vector<int>>(tempCard),step,windowSize,clusterNum, rawDataSize, centroid, prevCentroid);
+    prevCentroid = true;
+  }
+  List resultCentroids(clusterNum);
+  for(int i = 0; i < clusterNum; i++){
+    resultCentroids.at(i) = List::create(Named("Sequence") = wrap(centroid.at(i).seq), Named("Cardinality") = wrap(centroid.at(i).card));
+  }
+  return resultCentroids;
 }
 
 // This function is used to test the outputs of the normData function
