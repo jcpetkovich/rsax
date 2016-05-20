@@ -47,6 +47,15 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// runMinDis
+void runMinDis();
+RcppExport SEXP rsax_runMinDis() {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    runMinDis();
+    return R_NilValue;
+END_RCPP
+}
 // runKMedian
 List runKMedian(NumericMatrix seq, NumericMatrix card, int step, int windowSize, int clusterNum, int rawDataSize, NumericMatrix centroidSeq, NumericMatrix centroidCard, bool prevCentroid);
 RcppExport SEXP rsax_runKMedian(SEXP seqSEXP, SEXP cardSEXP, SEXP stepSEXP, SEXP windowSizeSEXP, SEXP clusterNumSEXP, SEXP rawDataSizeSEXP, SEXP centroidSeqSEXP, SEXP centroidCardSEXP, SEXP prevCentroidSEXP) {

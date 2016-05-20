@@ -12,6 +12,31 @@ using namespace Rcpp;
 std::map<int,float*> tableMap;
 static bool cardError = false;
 
+//Custom Container for omp_lock_t
+//Written by: Joel Yliluoma
+//http://bisqwit.iki.fi/story/howto/openmp/
+#ifdef _OPENMP
+struct MutexType{
+  MutexType(){omp_init_lock(&lock);}
+  ~MutexType(){omp_destroy_lock(&lock);}
+  void Lock(){omp_set_lock(&lock);}
+  void Unlock(){omp_unset_lock(&lock);}
+
+  MutexType(const MutexType&){omp_init_lock(&lock);}
+  MutexType& operator = (const MutexType&){return *this;}
+public:
+  omp_lock_t lock;
+};
+#else
+/* A dummy mutex that doesn't actually exclude anything,
+ * but as there is no parallelism either, no worries. */
+struct MutexType{
+  void Lock(){}
+  void Unlock(){}
+};
+#endif
+//end of custom container
+
 float* getTable(int alphabetSize); //Function returns table
 
 // normalize data to have mean of 0 and standard deviation of 1 for SAX
@@ -216,18 +241,22 @@ float minDis(std:: vector<int> SAXData1, std::vector<int> card1, std::vector<int
   if((SAXData1.size()==SAXData2.size())&&(card1.size() == card2.size()) && (SAXData1.size() == card1.size())){
     float* bkPts;
     int dataSize = SAXData1.size();
-    for(int i = 0; i < dataSize; i++){
-      if(card1.at(i) > card2.at(i)){
-        SAXData2.at(i) = promoteCard(card2.at(i),SAXData2.at(i), card1.at(i), SAXData1.at(i),suppressWarnings);
-        card2.at(i) = card1.at(i);
-      }
-      else if(card1.at(i) < card2.at(i)){
-        SAXData1.at(i) = promoteCard(card1.at(i), SAXData1.at(i), card2.at(i), SAXData2.at(i),suppressWarnings);
-        card1.at(i) = card2.at(i);
-      }
-      bkPts = getTable(card1.at(i));
-      if(std::abs(SAXData1.at(i) - SAXData2.at(i)) > 1){
-        distance += pow(bkPts[(int)fmax(SAXData1.at(i), SAXData2.at(i))-1] - bkPts[(int)fmin(SAXData1.at(i), SAXData2.at(i))],2);
+    int tile = 4096; //tbd
+#pragma omp parallel for
+    for(int ii = 0; ii < dataSize; ii+=tile){
+      for(int i = ii; i < (ii+tile) && i < dataSize; i++){
+        if(card1.at(i) > card2.at(i)){
+          SAXData2.at(i) = promoteCard(card2.at(i),SAXData2.at(i), card1.at(i), SAXData1.at(i),suppressWarnings);
+          card2.at(i) = card1.at(i);
+        }
+        else if(card1.at(i) < card2.at(i)){
+          SAXData1.at(i) = promoteCard(card1.at(i), SAXData1.at(i), card2.at(i), SAXData2.at(i),suppressWarnings);
+          card1.at(i) = card2.at(i);
+        }
+        bkPts = getTable(card1.at(i));
+        if(std::abs(SAXData1.at(i) - SAXData2.at(i)) > 1){
+          distance += pow(bkPts[(int)fmax(SAXData1.at(i), SAXData2.at(i))-1] - bkPts[(int)fmin(SAXData1.at(i), SAXData2.at(i))],2);
+        }
       }
     }
     distance = std::sqrt(distance);
@@ -241,7 +270,6 @@ struct element{
   std::vector<int> card;
   float dist = 0;
 };
-
 
 std::vector<element> kMedian(std::vector<int> seq, std::vector<int> card, int step, int windowSize,int clusterNum, int rawDataSize, std::vector<element> centroidIn, bool prevCentroid = false){
   int index = 0;
@@ -274,44 +302,61 @@ std::vector<element> kMedian(std::vector<int> seq, std::vector<int> card, int st
   }
   //End of assignment of centroids
 
-  //Have an array of omp_lock_t
+  //locks for open mp when inserting into clusters to prevent race conditions/bad sorting
+  MutexType *lock = new MutexType[clusterNum];
 
   //array of vectors to hold each cluster
   std::vector<element> *cluster = new std::vector<element>[clusterNum];
   //iterate through each possible group of size 'windowSize' and interval 'step' in the sequence
-  for(int i = index; i < (seq.size()-windowSize);i+=step){
-    //temp element to hold the current element
-    element temp;
-    temp.seq.assign(seq.begin()+i,seq.begin()+i+windowSize);
-    temp.card.assign(card.begin()+i,card.begin()+i+windowSize);
-    //vector of distance calculations to find the min between each centroid of clusters
-    std::vector<float> dist;
-    //iterate through centroids and save distance between the current vector and the centroid
-    for(int c = 0; c < clusterNum; c++)
-      dist.push_back(minDis(centroidIn.at(c).seq,centroidIn.at(c).card,temp.seq,temp.card,rawDataSize,true));
-    //get the iterator for the minimum of the vector
-    std::vector<float>::iterator it= std::min_element(dist.begin(), dist.end());
-    //set the value of the minimum distance of the vector
-    temp.dist = *it;
-    //determine which cluster the element belongs in
-    int clusterIndex = std::distance(dist.begin(),it);
-    bool done = false;
-    //iterate though elements in each cluster and insert the new element to have the cluster orded from smallest to largest
-    for(int v = 0; v < cluster[clusterIndex].size(); v++){
-      if(cluster[clusterIndex].at(v).dist > temp.dist){
-        cluster[clusterIndex].insert(cluster[clusterIndex].begin()+v,temp);//omp lock this
-        done = true;
-        break;
+  int tile = 4096*step; //tbd
+#pragma omp parallel for
+  for(int ii = index; ii <= (seq.size()-windowSize); ii+=tile){
+    for(int i = ii; i < (ii+tile) && i <= (seq.size()-windowSize);i+=step){
+      //temp element to hold the current element
+      element temp;
+      temp.seq.assign(seq.begin()+i,seq.begin()+i+windowSize);
+      temp.card.assign(card.begin()+i,card.begin()+i+windowSize);
+
+      //vector of distance calculations to find the min between each centroid of clusters
+      std::vector<float> dist;
+
+      //iterate through centroids and save distance between the current vector and the centroid
+      for(int c = 0; c < clusterNum; c++)
+        dist.push_back(minDis(centroidIn.at(c).seq,centroidIn.at(c).card,temp.seq,temp.card,rawDataSize,true));
+
+      //get the iterator for the minimum of the vector
+      std::vector<float>::iterator it= std::min_element(dist.begin(), dist.end());
+      //set the value of the minimum distance of the vector
+      temp.dist = *it;
+      //determine which cluster the element belongs in
+      int clusterIndex = std::distance(dist.begin(),it);
+      bool done = false;
+
+      //iterate though elements in each cluster and insert the new element to have the cluster orded from smallest to largest
+      for(int v = 0; v < cluster[clusterIndex].size(); v++){
+        if(cluster[clusterIndex].at(v).dist > temp.dist){
+          lock[clusterIndex].Lock();
+          cluster[clusterIndex].insert(cluster[clusterIndex].begin()+v,temp);//omp lock this
+          lock[clusterIndex].Unlock();
+          done = true;
+          break;
+        }
+      }
+
+      //if every element in the cluster is smaller set the new element to the last index in the cluster
+      if(!done){
+        lock[clusterIndex].Lock();
+        cluster[clusterIndex].push_back(temp);
+        lock[clusterIndex].Unlock();
       }
     }
-    //if every element in the cluster is smaller set the new element to the last index in the cluster
-    if(!done)
-      cluster[clusterIndex].push_back(temp); //omp lock this
   }
 
   for(int i = 0; i < clusterNum; i++){
     if(cluster[i].size() != 0)
-      centroidIn.at(i) = cluster[i].at((int)(cluster[i].size()/2));
+      centroidIn.at(i) = cluster[i].at((int)((cluster[i].size()-1)/2));
+    else
+      return kMedian(seq,card,step,windowSize,clusterNum,rawDataSize,centroidIn,false);
   }
   return centroidIn;
 }
@@ -344,10 +389,11 @@ List runKMedian(NumericMatrix seq, NumericMatrix card, int step, int windowSize,
     centroid = kMedian(as<std::vector<int>>(tempSeq),as<std::vector<int>>(tempCard),step,windowSize,clusterNum, rawDataSize, centroid, prevCentroid);
     prevCentroid = true;
   }
+
   List resultCentroids(clusterNum);
-  for(int i = 0; i < clusterNum; i++){
+  for(int i = 0; i < clusterNum; i++)
     resultCentroids.at(i) = List::create(Named("Sequence") = wrap(centroid.at(i).seq), Named("Cardinality") = wrap(centroid.at(i).card));
-  }
+
   return resultCentroids;
 }
 

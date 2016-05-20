@@ -13,6 +13,10 @@ minDis <- function(SAXData1, card1, SAXData2, card2, rawDataSize, suppressWarnin
     .Call('rsax_minDis', PACKAGE = 'rsax', SAXData1, card1, SAXData2, card2, rawDataSize, suppressWarnings)
 }
 
+runMinDis <- function() {
+    invisible(.Call('rsax_runMinDis', PACKAGE = 'rsax'))
+}
+
 runKMedian <- function(seq, card, step, windowSize, clusterNum, rawDataSize, centroidSeq, centroidCard, prevCentroid = FALSE) {
     .Call('rsax_runKMedian', PACKAGE = 'rsax', seq, card, step, windowSize, clusterNum, rawDataSize, centroidSeq, centroidCard, prevCentroid)
 }
