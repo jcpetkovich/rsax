@@ -21,7 +21,7 @@ test_that("kMedian Function -- No Previous Centroids",{
   result2 = list(Sequence = c(0,0,4,4),Cardinality = c(5,5,5,5))
   result3 = list(Sequence = c(4,3,0,0),Cardinality = c(5,5,5,5))
   result = list(result1,result2,result3)
-  expect_equal(runKMedian(seq,card,2,4,3,60, matrix(1,1,1),matrix(1,1,1),F), result)
+  expect_equal(runKMedian(seq,card,2,4,3, matrix(1,1,1),matrix(1,1,1),F), result)
 })
 
 test_that("kMedian Function -- With Previous Centroids",{
@@ -30,5 +30,16 @@ test_that("kMedian Function -- With Previous Centroids",{
   result2 = list(Sequence = c(0,0,4,4),Cardinality = c(5,5,5,5))
   result3 = list(Sequence = c(4,3,0,0),Cardinality = c(5,5,5,5))
   result = list(result1,result2,result3)
-  expect_equal(runKMedian(seq,card,2,4,3,60, prevCent,matrix(5,3,4),T), result)
+  expect_equal(runKMedian(seq,card,2,4,3, prevCent,matrix(5,3,4),T), result)
+})
+
+test_that("reconstruct Function",{
+  centroid1 = list(Sequence = c(2,0,4,0),Cardinality = c(5,5,5,5))
+  centroid2 = list(Sequence = c(0,0,4,4),Cardinality = c(5,5,5,5))
+  centroid3 = list(Sequence = c(4,3,0,0),Cardinality = c(5,5,5,5))
+  centroids = list(centroid1,centroid2,centroid3)
+  test_data3 = c(4,1,4,1,4,3,0,1,2,0,4,0,0,4,4,3,0,0,4,4);
+  test_card3 = c(5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5);
+  result = list(Reconstructed_Sequence = c(2,0,2,0,4,3,2,0,2,0,4,3,0,0,4,3,0,0,4,4), Difference_Vector = c(2,1,2,1,0,0,-2,1,0,0,0,-3,0,4,0,0,0,0,0,0))
+  expect_equal(reconstruct(test_data3,test_card3,2,centroids),result)
 })

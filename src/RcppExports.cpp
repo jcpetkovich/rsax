@@ -6,8 +6,8 @@
 using namespace Rcpp;
 
 // runKMedian
-List runKMedian(NumericMatrix seq, NumericMatrix card, int step, int windowSize, int clusterNum, int rawDataSize, NumericMatrix centroidSeq, NumericMatrix centroidCard, bool prevCentroid);
-RcppExport SEXP rsax_runKMedian(SEXP seqSEXP, SEXP cardSEXP, SEXP stepSEXP, SEXP windowSizeSEXP, SEXP clusterNumSEXP, SEXP rawDataSizeSEXP, SEXP centroidSeqSEXP, SEXP centroidCardSEXP, SEXP prevCentroidSEXP) {
+List runKMedian(NumericMatrix seq, NumericMatrix card, int step, int windowSize, int clusterNum, NumericMatrix centroidSeq, NumericMatrix centroidCard, bool prevCentroid);
+RcppExport SEXP rsax_runKMedian(SEXP seqSEXP, SEXP cardSEXP, SEXP stepSEXP, SEXP windowSizeSEXP, SEXP clusterNumSEXP, SEXP centroidSeqSEXP, SEXP centroidCardSEXP, SEXP prevCentroidSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -16,11 +16,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type step(stepSEXP);
     Rcpp::traits::input_parameter< int >::type windowSize(windowSizeSEXP);
     Rcpp::traits::input_parameter< int >::type clusterNum(clusterNumSEXP);
-    Rcpp::traits::input_parameter< int >::type rawDataSize(rawDataSizeSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type centroidSeq(centroidSeqSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type centroidCard(centroidCardSEXP);
     Rcpp::traits::input_parameter< bool >::type prevCentroid(prevCentroidSEXP);
-    __result = Rcpp::wrap(runKMedian(seq, card, step, windowSize, clusterNum, rawDataSize, centroidSeq, centroidCard, prevCentroid));
+    __result = Rcpp::wrap(runKMedian(seq, card, step, windowSize, clusterNum, centroidSeq, centroidCard, prevCentroid));
+    return __result;
+END_RCPP
+}
+// reconstruct
+List reconstruct(std::vector<int> seq, std::vector<int> card, int step, List centroidList);
+RcppExport SEXP rsax_reconstruct(SEXP seqSEXP, SEXP cardSEXP, SEXP stepSEXP, SEXP centroidListSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<int> >::type seq(seqSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type card(cardSEXP);
+    Rcpp::traits::input_parameter< int >::type step(stepSEXP);
+    Rcpp::traits::input_parameter< List >::type centroidList(centroidListSEXP);
+    __result = Rcpp::wrap(reconstruct(seq, card, step, centroidList));
     return __result;
 END_RCPP
 }
