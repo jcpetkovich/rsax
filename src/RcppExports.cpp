@@ -5,17 +5,22 @@
 
 using namespace Rcpp;
 
-// runSAX
-RObject runSAX(std::vector<float> orgData, int segmentSize, int alphabetSize, bool iSAX);
-RcppExport SEXP rsax_runSAX(SEXP orgDataSEXP, SEXP segmentSizeSEXP, SEXP alphabetSizeSEXP, SEXP iSAXSEXP) {
+// runKMedian
+List runKMedian(NumericMatrix seq, NumericMatrix card, int step, int windowSize, int clusterNum, int rawDataSize, NumericMatrix centroidSeq, NumericMatrix centroidCard, bool prevCentroid);
+RcppExport SEXP rsax_runKMedian(SEXP seqSEXP, SEXP cardSEXP, SEXP stepSEXP, SEXP windowSizeSEXP, SEXP clusterNumSEXP, SEXP rawDataSizeSEXP, SEXP centroidSeqSEXP, SEXP centroidCardSEXP, SEXP prevCentroidSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< std::vector<float> >::type orgData(orgDataSEXP);
-    Rcpp::traits::input_parameter< int >::type segmentSize(segmentSizeSEXP);
-    Rcpp::traits::input_parameter< int >::type alphabetSize(alphabetSizeSEXP);
-    Rcpp::traits::input_parameter< bool >::type iSAX(iSAXSEXP);
-    __result = Rcpp::wrap(runSAX(orgData, segmentSize, alphabetSize, iSAX));
+    Rcpp::traits::input_parameter< NumericMatrix >::type seq(seqSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type card(cardSEXP);
+    Rcpp::traits::input_parameter< int >::type step(stepSEXP);
+    Rcpp::traits::input_parameter< int >::type windowSize(windowSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type clusterNum(clusterNumSEXP);
+    Rcpp::traits::input_parameter< int >::type rawDataSize(rawDataSizeSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type centroidSeq(centroidSeqSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type centroidCard(centroidCardSEXP);
+    Rcpp::traits::input_parameter< bool >::type prevCentroid(prevCentroidSEXP);
+    __result = Rcpp::wrap(runKMedian(seq, card, step, windowSize, clusterNum, rawDataSize, centroidSeq, centroidCard, prevCentroid));
     return __result;
 END_RCPP
 }
@@ -47,31 +52,17 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// runMinDis
-void runMinDis();
-RcppExport SEXP rsax_runMinDis() {
-BEGIN_RCPP
-    Rcpp::RNGScope __rngScope;
-    runMinDis();
-    return R_NilValue;
-END_RCPP
-}
-// runKMedian
-List runKMedian(NumericMatrix seq, NumericMatrix card, int step, int windowSize, int clusterNum, int rawDataSize, NumericMatrix centroidSeq, NumericMatrix centroidCard, bool prevCentroid);
-RcppExport SEXP rsax_runKMedian(SEXP seqSEXP, SEXP cardSEXP, SEXP stepSEXP, SEXP windowSizeSEXP, SEXP clusterNumSEXP, SEXP rawDataSizeSEXP, SEXP centroidSeqSEXP, SEXP centroidCardSEXP, SEXP prevCentroidSEXP) {
+// runSAX
+RObject runSAX(std::vector<float> orgData, int segmentSize, int alphabetSize, bool iSAX);
+RcppExport SEXP rsax_runSAX(SEXP orgDataSEXP, SEXP segmentSizeSEXP, SEXP alphabetSizeSEXP, SEXP iSAXSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< NumericMatrix >::type seq(seqSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type card(cardSEXP);
-    Rcpp::traits::input_parameter< int >::type step(stepSEXP);
-    Rcpp::traits::input_parameter< int >::type windowSize(windowSizeSEXP);
-    Rcpp::traits::input_parameter< int >::type clusterNum(clusterNumSEXP);
-    Rcpp::traits::input_parameter< int >::type rawDataSize(rawDataSizeSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type centroidSeq(centroidSeqSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type centroidCard(centroidCardSEXP);
-    Rcpp::traits::input_parameter< bool >::type prevCentroid(prevCentroidSEXP);
-    __result = Rcpp::wrap(runKMedian(seq, card, step, windowSize, clusterNum, rawDataSize, centroidSeq, centroidCard, prevCentroid));
+    Rcpp::traits::input_parameter< std::vector<float> >::type orgData(orgDataSEXP);
+    Rcpp::traits::input_parameter< int >::type segmentSize(segmentSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type alphabetSize(alphabetSizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type iSAX(iSAXSEXP);
+    __result = Rcpp::wrap(runSAX(orgData, segmentSize, alphabetSize, iSAX));
     return __result;
 END_RCPP
 }
