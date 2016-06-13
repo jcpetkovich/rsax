@@ -77,6 +77,9 @@ void normData(std::vector<float> *data, std::vector<float> *norm){
 #pragma omp parallel for default(shared) reduction(+ : sumx,                   \
   sumx2) schedule(guided)
     for (decltype(data->size()) i = 0; i < data->size(); i++) {
+      if(!isfinite(data->at(i)))
+        Rf_error("Your data contains NaN, Inf or -Inf. Remove them and try again");
+
       sumx += data->at(i);
       sumx2 += data->at(i) * data->at(i);
     }
@@ -187,4 +190,11 @@ RObject runToSAX(std::vector<float> data, int brkPtNum) {
   std::vector<int> card;
   toSAX(&data, &SAXWord, &card, brkPtNum);
   return wrap(SAXWord);
+}
+// [[Rcpp::export]]
+void ttt(std::vector<float> data){
+  std::cout<<data.at(0)<<std::endl;
+  if(isnan(data.at(0))){
+    std::cout<<"nan is here"<<std::endl;
+  }
 }

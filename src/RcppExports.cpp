@@ -5,6 +5,19 @@
 
 using namespace Rcpp;
 
+// WCAD
+NumericVector WCAD(std::vector<int> data, int windowNum, float cdmThreshold);
+RcppExport SEXP rsax_WCAD(SEXP dataSEXP, SEXP windowNumSEXP, SEXP cdmThresholdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<int> >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< int >::type windowNum(windowNumSEXP);
+    Rcpp::traits::input_parameter< float >::type cdmThreshold(cdmThresholdSEXP);
+    __result = Rcpp::wrap(WCAD(data, windowNum, cdmThreshold));
+    return __result;
+END_RCPP
+}
 // runKMedian
 List runKMedian(NumericMatrix seq, NumericMatrix card, int step, int windowSize, int clusterNum, NumericMatrix centroidSeq, NumericMatrix centroidCard, bool prevCentroid);
 RcppExport SEXP rsax_runKMedian(SEXP seqSEXP, SEXP cardSEXP, SEXP stepSEXP, SEXP windowSizeSEXP, SEXP clusterNumSEXP, SEXP centroidSeqSEXP, SEXP centroidCardSEXP, SEXP prevCentroidSEXP) {
@@ -112,6 +125,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type brkPtNum(brkPtNumSEXP);
     __result = Rcpp::wrap(runToSAX(data, brkPtNum));
     return __result;
+END_RCPP
+}
+// ttt
+void ttt(std::vector<float> data);
+RcppExport SEXP rsax_ttt(SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<float> >::type data(dataSEXP);
+    ttt(data);
+    return R_NilValue;
 END_RCPP
 }
 // testFunc
